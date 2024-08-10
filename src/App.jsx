@@ -1,10 +1,10 @@
 import React from "react";
-import Upload from "./components/Upload";
+import FileUpload from "./components/file-upload/FileUpload";
 
 const App = () => {
   return (
-    <div className="h-[100vh] w-[100vw] flex items-center justify-center mx-auto">
-      <Upload />
+    <div className="flex justify-center items-center h-screen">
+      <FileUpload />
     </div>
   );
 };
