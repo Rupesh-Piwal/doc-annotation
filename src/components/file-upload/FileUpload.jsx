@@ -55,10 +55,9 @@ const FileUpload = () => {
           {selectedFile && (
             <div className="text-sm text-gray-700 mb-4">
               <div className="flex justify-between items-center">
-                <span className="border p-2 rounded font-semibold ">
+                <span className="border p-2 rounded font-semibold">
                   Selected File:{" "}
                   <span className="font-normal text-gray-500">
-                    {" "}
                     {selectedFile.name}
                   </span>
                 </span>
