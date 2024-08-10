@@ -1,50 +1,61 @@
-import React, { useEffect, useRef } from "react";
-import { PDFDocument } from "pdf-lib";
+import useResizeObserver from "@react-hook/resize-observer";
+import React, { useCallback, useState } from "react";
+import { pdfjs, Document, Page } from "react-pdf";
+
+// Use the external CDN URL for the PDF worker
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js`;
+
+const options = {
+  cMapUrl: "/cmaps/",
+  standardFontDataUrl: "/standard_fonts/",
+};
 
 const FilePreview = ({ file, previewUrl }) => {
-  const canvasRef = useRef(null);
+  const [numPages, setNumPages] = useState(null);
+  const [containerRef, setContainerRef] = useState(null);
+  const [containerWidth, setContainerWidth] = useState(null);
 
-  useEffect(() => {
-    if (file && file.type === "application/pdf" && previewUrl) {
-      const renderPdf = async () => {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext("2d");
+  const onResize = useCallback((entry) => {
+    setContainerWidth(entry.contentRect.width);
+  }, []);
 
-        if (!canvas || !ctx) return;
+  useResizeObserver(containerRef, onResize);
 
-        const response = await fetch(previewUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(arrayBuffer);
+  function onDocumentLoadSuccess({ numPages: nextNumPages }) {
+    setNumPages(nextNumPages);
+  }
 
-        // Assuming a single page PDF
-        const [page] = pdfDoc.getPages();
-        const { width, height } = page.getSize();
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const pdfPage = await page.render();
-        ctx.drawImage(pdfPage, 0, 0, width, height);
-      };
-
-      renderPdf();
-    }
-  }, [file, previewUrl]);
+  // Determine if the file is a PDF or an image
+  const isPDF = file?.type === 'application/pdf' || previewUrl?.endsWith('.pdf');
+  const isImage = file?.type.startsWith('image/') || previewUrl?.match(/\.(jpg|jpeg|png)$/i);
 
   return (
-    <div>
-      {file && file.type === "application/pdf" ? (
-        <canvas ref={canvasRef} style={{ width: "100%", height: "auto" }} />
-      ) : file.type.startsWith("image/") ? (
-        <img
-          src={previewUrl}
-          alt="File Preview"
-          className="max-w-full h-auto rounded-lg"
-          style={{ maxHeight: "400px", objectFit: "contain" }}
-        />
-      ) : (
-        <div className="text-sm text-gray-700">File preview not available</div>
-      )}
+    <div className="file-preview-container">
+      <div ref={setContainerRef} className="file-preview">
+        {isPDF ? (
+          <Document
+            file={file || previewUrl}
+            onLoadSuccess={onDocumentLoadSuccess}
+            options={options}
+          >
+            {Array.from(new Array(numPages), (el, index) => (
+              <Page
+                key={`page_${index + 1}`}
+                pageNumber={index + 1}
+                width={containerWidth ? Math.min(containerWidth, 800) : 800}
+              />
+            ))}
+          </Document>
+        ) : isImage ? (
+          <img
+            src={file ? URL.createObjectURL(file) : previewUrl}
+            alt="Preview"
+            style={{ maxWidth: '100%', height: 'auto' }}
+          />
+        ) : (
+          <p>Unsupported file type</p>
+        )}
+      </div>
     </div>
   );
 };

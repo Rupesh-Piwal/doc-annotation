@@ -1,9 +1,7 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import Loader from "./Loader";
 import { useFileUpload } from "../../hooks/useFileUpload";
-import FilePreview from "./FilePreview.jsx";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import FilePreview from "./FilePreview";
 
 const FileUpload = () => {
   const {
@@ -16,28 +14,9 @@ const FileUpload = () => {
     handleUpload,
   } = useFileUpload();
 
-  const [pdfUrl, setPdfUrl] = useState(null);
-  const contentRef = useRef();
-
   const handleExtract = () => {
     // Logic for extracting content can be added here
     console.log("Extracting content from file:", selectedFile);
-  };
-
-  const handleGeneratePdf = async () => {
-    const doc = new jsPDF();
-
-    // Capture HTML content as canvas
-    const canvas = await html2canvas(contentRef.current);
-    const imgData = canvas.toDataURL("image/png");
-
-    // Add image to PDF
-    doc.addImage(imgData, "PNG", 0, 0);
-
-    // Save the PDF as a Blob
-    const pdfBlob = doc.output("blob");
-    const pdfUrl = URL.createObjectURL(pdfBlob);
-    setPdfUrl(pdfUrl);
   };
 
   return (
@@ -82,29 +61,7 @@ const FileUpload = () => {
       {isLoading && <Loader />}
       {isUploaded && (
         <>
-          <div
-            ref={contentRef}
-            style={{ padding: "20px", border: "1px solid #ddd" }}
-          >
-            <FilePreview file={selectedFile} previewUrl={filePreview} />
-          </div>
-          <button
-            onClick={handleGeneratePdf}
-            className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg mb-4"
-          >
-            Generate PDF
-          </button>
-          {pdfUrl && (
-            <div>
-              <iframe
-                src={pdfUrl}
-                title="PDF Preview"
-                width="100%"
-                height="600px"
-                style={{ border: "none" }}
-              />
-            </div>
-          )}
+          <FilePreview file={selectedFile} previewUrl={filePreview} />
           <button
             onClick={handleExtract}
             className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg"
