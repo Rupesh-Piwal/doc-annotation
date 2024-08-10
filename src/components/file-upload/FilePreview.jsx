@@ -1,15 +1,13 @@
-import React from "react";
-
 const FilePreview = ({ file, previewUrl }) => {
-  if (!file || !previewUrl) return null;
-
   if (file.type.startsWith("image/")) {
     return (
-      <img
-        src={previewUrl}
-        alt="File Preview"
-        className="max-w-full h-auto rounded-lg"
-      />
+      <div className="w-full h-full flex justify-center items-center">
+        <img
+          src={previewUrl}
+          alt="File Preview"
+          className="preview-image rounded-lg"
+        />
+      </div>
     );
   } else if (file.type === "application/pdf") {
     return (
@@ -21,9 +19,18 @@ const FilePreview = ({ file, previewUrl }) => {
         className="rounded-lg"
       />
     );
+  } else if (file.name.endsWith(".pdg")) {
+    return (
+      <div className="text-sm text-gray-700">
+        Preview for PDG files is not supported. You can download and view it
+        locally.
+      </div>
+    );
   } else {
     return (
-      <div className="text-sm text-gray-700">File preview not available</div>
+      <div className="text-sm text-gray-700">
+        File preview not available for this format.
+      </div>
     );
   }
 };
