@@ -1,3 +1,6 @@
+import React from "react";
+import PdfViewer from "./PdfViewer";
+
 const FilePreview = ({ file, previewUrl }) => {
   if (file.type.startsWith("image/")) {
     return (
@@ -11,13 +14,9 @@ const FilePreview = ({ file, previewUrl }) => {
     );
   } else if (file.type === "application/pdf") {
     return (
-      <embed
-        src={previewUrl}
-        type="application/pdf"
-        width="100%"
-        height="400px"
-        className="rounded-lg"
-      />
+      <div className="w-full h-full flex justify-center items-center">
+        <PdfViewer previewUrl={previewUrl} />
+      </div>
     );
   } else if (file.name.endsWith(".pdg")) {
     return (
