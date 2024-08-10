@@ -1,60 +1,39 @@
-import useResizeObserver from "@react-hook/resize-observer";
 import React, { useCallback, useState } from "react";
 import { pdfjs, Document, Page } from "react-pdf";
 
-// Use the external CDN URL for the PDF worker
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.js`;
 
-const options = {
-  cMapUrl: "/cmaps/",
-  standardFontDataUrl: "/standard_fonts/",
-};
+pdfjs.GlobalWorkerOptions.workerSrc =
+  "https://unpkg.com/pdfjs-dist@2.12.313/legacy/build/pdf.worker.min.js";
 
-const FilePreview = ({ file, previewUrl }) => {
+const FilePreview = ({ file }) => {
   const [numPages, setNumPages] = useState(null);
   const [containerRef, setContainerRef] = useState(null);
-  const [containerWidth, setContainerWidth] = useState(null);
+  const [containerWidth, setContainerWidth] = useState(800);
 
-  const onResize = useCallback((entry) => {
-    setContainerWidth(entry.contentRect.width);
+  const onResize = useCallback((entries) => {
+    const [entry] = entries;
+    if (entry) {
+      setContainerWidth(entry.contentRect.width);
+    }
   }, []);
-
-  useResizeObserver(containerRef, onResize);
 
   function onDocumentLoadSuccess({ numPages: nextNumPages }) {
     setNumPages(nextNumPages);
   }
 
-  // Determine if the file is a PDF or an image
-  const isPDF = file?.type === 'application/pdf' || previewUrl?.endsWith('.pdf');
-  const isImage = file?.type.startsWith('image/') || previewUrl?.match(/\.(jpg|jpeg|png)$/i);
-
   return (
     <div className="file-preview-container">
       <div ref={setContainerRef} className="file-preview">
-        {isPDF ? (
-          <Document
-            file={file || previewUrl}
-            onLoadSuccess={onDocumentLoadSuccess}
-            options={options}
-          >
-            {Array.from(new Array(numPages), (el, index) => (
+        <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
+          {numPages &&
+            Array.from(new Array(numPages), (el, index) => (
               <Page
                 key={`page_${index + 1}`}
                 pageNumber={index + 1}
-                width={containerWidth ? Math.min(containerWidth, 800) : 800}
+                width={Math.min(containerWidth, 800)}
               />
             ))}
-          </Document>
-        ) : isImage ? (
-          <img
-            src={file ? URL.createObjectURL(file) : previewUrl}
-            alt="Preview"
-            style={{ maxWidth: '100%', height: 'auto' }}
-          />
-        ) : (
-          <p>Unsupported file type</p>
-        )}
+        </Document>
       </div>
     </div>
   );
