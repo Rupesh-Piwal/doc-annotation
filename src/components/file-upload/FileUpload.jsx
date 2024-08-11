@@ -20,7 +20,11 @@ const FileUpload = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 items-center justify-center border-2 border-dotted border-gray-400 p-4 rounded-lg w-[600px] h-[95%]">
+    <div
+      className={`flex flex-col gap-4 items-center justify-center p-4 rounded-lg w-[600px] h-[90%] ${
+        isUploaded ? "border-0" : "border-2 border-dotted border-gray-400"
+      }`}
+    >
       {!isUploaded && (
         <>
           <input

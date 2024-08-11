@@ -22,3 +22,12 @@
   }
 }
 
+.file-preview-container {
+  width: 100%;
+  height: auto;
+}
+
+.file-preview {
+  max-width: 800px;
+  margin: 0 auto;
+}
