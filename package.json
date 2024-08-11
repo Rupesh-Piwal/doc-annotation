@@ -20,6 +20,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-image-annotate": "^1.8.0",
+    "react-image-annotation": "^0.9.10",
     "react-loading-skeleton": "^3.4.0",
     "react-pdf": "^5.7.2"
   },
