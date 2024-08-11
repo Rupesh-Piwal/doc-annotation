@@ -31,9 +31,10 @@ const FilePreview = ({ file }) => {
                 pageNumber={index + 1}
                 height={
                   document.getElementsByClassName("PdfDiv")[0]?.clientHeight
-                    ? document.getElementsByClassName("PdfDiv")[0]?.clientHeight * 0.8
+                    ? document.getElementsByClassName("PdfDiv")[0]
+                        ?.clientHeight * 0.8
                     : 150
-                }                
+                }
                 width={Math.min(containerWidth, 500)}
               />
             ))}
