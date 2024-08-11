@@ -26,13 +26,3 @@
   }
 }
 
- /* .file-preview-container {
-  width: 100%;
-  height: auto;
-} */
-
- .file-preview {
- margin: 0 auto;
-    /* width: 80% !important; */
-    height: 80% !important;
-}  
