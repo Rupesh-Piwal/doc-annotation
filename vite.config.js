@@ -183,7 +183,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "index.html",
-        pdfWorker: "path/to/pdf.worker.min.js", // Ensure this path is correct
+        pdfWorker: "path/to/pdf.worker.min.js", 
       },
     },
   },
