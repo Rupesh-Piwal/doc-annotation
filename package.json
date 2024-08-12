@@ -13,6 +13,7 @@
   "dependencies": {
     "@react-hook/resize-observer": "^2.0.2",
     "@wojtekmaj/react-hooks": "^1.21.0",
+    "file-saver": "^2.0.5",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.1",
     "pdf-lib": "^1.17.1",

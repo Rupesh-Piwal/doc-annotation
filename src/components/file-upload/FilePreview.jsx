@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
-import { pdfjs, Document, Page } from "react-pdf";
+import { pdfjs } from "react-pdf";
 import Annotation from "react-image-annotation";
-import ReactImageAnnotate from "react-image-annotate";
+import { PDFDocument } from "pdf-lib";
+import { saveFile } from "../../utils/fileUtils";
 
 pdfjs.GlobalWorkerOptions.workerSrc =
   "https://unpkg.com/pdfjs-dist@2.12.313/legacy/build/pdf.worker.min.js";
 
-const FilePreview = ({ file }) => {
+const FilePreview = ({ file, annotations, setAnnotations }) => {
   const [numPages, setNumPages] = useState(null);
   const [pageImages, setPageImages] = useState([]);
-  const [annotations, setAnnotations] = useState([]);
   const [annotation, setAnnotation] = useState({});
   const [selectedPage, setSelectedPage] = useState(0);
   const undoStackRef = useRef([]);
@@ -119,7 +119,7 @@ const FilePreview = ({ file }) => {
           top: `${geometry.y - 9}%`,
         }}
       >
-        {annotation.data && annotation.data.text}
+        {annotation.data && `${annotation.data.key}: ${annotation.data.value}`}
       </div>
     );
   }
@@ -145,7 +145,7 @@ const FilePreview = ({ file }) => {
               ...props.annotation,
               data: {
                 ...props.annotation.data,
-                text: e.target.value,
+                key: e.target.value,
               },
             })
           }
@@ -158,7 +158,7 @@ const FilePreview = ({ file }) => {
               ...props.annotation,
               data: {
                 ...props.annotation.data,
-                text: e.target.value,
+                value: e.target.value,
               },
             })
           }
@@ -182,7 +182,6 @@ const FilePreview = ({ file }) => {
 
     redoStackRef.current = [];
 
-    setAnnotation({});
     const newAnnotationData = {
       geometry,
       data: {
@@ -192,8 +191,10 @@ const FilePreview = ({ file }) => {
       },
     };
 
-    setAnnotations([...annotations, newAnnotationData]);
-
+    setAnnotations((prevAnnotations) => [
+      ...prevAnnotations,
+      newAnnotationData,
+    ]);
     undoStackRef.current.push(annotations);
   };
 
@@ -217,61 +218,95 @@ const FilePreview = ({ file }) => {
     }
   };
 
+  const handleExtract = () => {
+    const extractedData = annotations.map((annotation) => ({
+      x: annotation.geometry.x,
+      y: annotation.geometry.y,
+      width: annotation.geometry.width,
+      height: annotation.geometry.height,
+      key: annotation.data.key,
+      value: annotation.data.value,
+    }));
+
+    console.log("Extracted data:", JSON.stringify(extractedData, null, 2));
+  };
+
+  const handleDownload = async () => {
+    // Fetch the original PDF file
+    const response = await fetch(URL.createObjectURL(file));
+    const pdfBytes = await response.arrayBuffer();
+
+    // Load the PDF with pdf-lib
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+
+    // Serialize the PDF to bytes
+    const pdfData = await pdfDoc.save();
+
+    // Save the PDF file
+    saveFile(pdfData, "downloaded.pdf");
+  };
+
+  const saveFile = (data, fileName) => {
+    const blob = new Blob([data], { type: "application/pdf" });
+    saveAs(blob, fileName);
+  };
+
   return (
-    <div className="file-preview-container p-4 rounded-lg mt-[300px] mb-4 border-2 border-dotted border-gray-400">
-      <div className="file-preview">
-        <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
-          {numPages && pageImages.length > 0 && (
-            <div>
-              <div className="flex gap-4 justify-center items-center my-4">
-                <button
-                  className={style.button}
-                  onClick={handleUndo}
-                  type="button"
-                >
-                  Undo
-                </button>
-                <button
-                  className={style.button}
-                  onClick={handleRedo}
-                  type="button"
-                >
-                  Redo
-                </button>
-              </div>
-              <Annotation
-                src={pageImages[selectedPage]}
-                alt={`Page ${selectedPage + 1}`}
-                annotations={annotations.filter(
-                  (anno) => anno.data.pageIndex === selectedPage
-                )}
-                value={annotation}
-                type={annotation.type}
-                className="h-[500px] w-auto cursor-crosshair"
-                onChange={onChange}
-                onSubmit={onSubmit}
-                allowTouch
-                renderOverlay={() => null}
-                renderSelector={renderSelector}
-                renderHighlight={renderHighlight}
-                renderContent={renderContent}
-                renderEditor={renderEditor}
-              />
-              <div className="mt-[4%] flex flex-wrap gap-4 items-center justify-center mb-4">
-                {pageImages?.map((src, index) => (
-                  <div key={index} className="h-[70px]">
-                    <img
-                      src={src}
-                      onClick={() => handlePageSelection(index)}
-                      alt={`Page ${index + 1}`}
-                      className="w-[100px] h-full cursor-pointer"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </Document>
+    <div className="file-preview-container p-4">
+      <div className="flex justify-center mb-4">
+        {pageImages.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => handlePageSelection(index)}
+            className={`${
+              selectedPage === index ? "bg-blue-500" : "bg-gray-300"
+            } text-white font-bold py-2 px-4 rounded mx-1`}
+          >
+            Page {index + 1}
+          </button>
+        ))}
+      </div>
+      <div className="relative">
+        {pageImages[selectedPage] && (
+          <Annotation
+            src={pageImages[selectedPage]}
+            alt={`Page ${selectedPage + 1}`}
+            annotations={annotations.filter(
+              (annotation) => annotation.data.pageIndex === selectedPage
+            )}
+            type="RECTANGLE"
+            value={annotation}
+            onChange={onChange}
+            onSubmit={onSubmit}
+            renderSelector={renderSelector}
+            renderHighlight={renderHighlight}
+            renderContent={renderContent}
+            renderEditor={renderEditor}
+          />
+        )}
+      </div>
+      <div className="flex justify-between mt-4">
+        <button
+          onClick={handleUndo}
+          className={`${style.button} bg-[#E10000] m-2`}
+        >
+          Undo
+        </button>
+        <button
+          onClick={handleRedo}
+          className={`${style.button} bg-[#0024E1] m-2`}
+        >
+          Redo
+        </button>
+        <button onClick={handleExtract} className={`${style.button} m-2`}>
+          Extract
+        </button>
+        <button
+          onClick={handleDownload}
+          className={`${style.button} bg-[#4ca3dd] m-2`}
+        >
+          Download PDF
+        </button>
       </div>
     </div>
   );
