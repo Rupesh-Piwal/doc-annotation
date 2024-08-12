@@ -3,7 +3,10 @@ import { pdfjs } from "react-pdf";
 import Annotation from "react-image-annotation";
 import { PDFDocument } from "pdf-lib";
 import { saveFile } from "../../utils/fileUtils";
-
+import PageSelector from "../PageSelector";
+import AnnotationEditor from "../Annotation-editor";
+import AnnotationRenderer from "../Annotation-render";
+import Button from "../Button";
 pdfjs.GlobalWorkerOptions.workerSrc =
   "https://unpkg.com/pdfjs-dist@2.12.313/legacy/build/pdf.worker.min.js";
 
@@ -15,187 +18,33 @@ const FilePreview = ({ file, annotations, setAnnotations }) => {
   const undoStackRef = useRef([]);
   const redoStackRef = useRef([]);
 
-  function onDocumentLoadSuccess({ numPages: nextNumPages }) {
-    setNumPages(nextNumPages);
-  }
-
   useEffect(() => {
-    const renderPagesAsImages = async (arrayBuffer) => {
-      const images = [];
-      const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.5 });
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        await page.render({ canvasContext: context, viewport }).promise;
-        images.push(canvas.toDataURL());
-      }
-      setPageImages(images);
-    };
-
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
-        const arrayBuffer = reader.result;
-        renderPagesAsImages(arrayBuffer);
+        renderPagesAsImages(reader.result);
       };
       reader.readAsArrayBuffer(file);
     }
   }, [file]);
 
-  const style = {
-    button: "text-[#fff] bg-[#4ca3dd] py-[2px] px-2 rounded-[5px]",
-  };
+  const renderPagesAsImages = async (arrayBuffer) => {
+    const images = [];
+    const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
 
-  const Box = ({ children, geometry, style }) => (
-    <div
-      style={{
-        ...style,
-        position: "absolute",
-        left: `${geometry.x}%`,
-        top: `${geometry.y}%`,
-        height: `${geometry.height}%`,
-        width: `${geometry.width}%`,
-      }}
-    >
-      {children}
-    </div>
-  );
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
 
-  function renderSelector({ annotation }) {
-    const { geometry } = annotation;
-    if (!geometry) return null;
-
-    return (
-      <Box
-        geometry={geometry}
-        style={{
-          border: `solid 2px #E10000`,
-        }}
-      />
-    );
-  }
-
-  function renderHighlight({ annotation }) {
-    const { geometry } = annotation;
-    const idIntegerPart = Math.floor(geometry?.height);
-
-    if (!geometry) return null;
-
-    return (
-      <Box
-        key={annotation.data.id}
-        geometry={geometry}
-        style={{
-          border: `solid 3px ${
-            idIntegerPart % 2 !== 0 ? "#E10000" : "#0024E1"
-          }`,
-        }}
-      />
-    );
-  }
-
-  function renderContent({ annotation }) {
-    const { geometry } = annotation;
-    const idIntegerPart = Math.floor(geometry?.height);
-    return (
-      <div
-        key={annotation.data.id}
-        style={{
-          background: `${idIntegerPart % 2 !== 0 ? "#C60606" : "#0653C6"}`,
-          color: "white",
-          paddingRight: 10,
-          paddingLeft: 10,
-          fontWeight: "bolder",
-          fontSize: 15,
-          position: "absolute",
-          left: `${geometry.x}%`,
-          top: `${geometry.y - 9}%`,
-        }}
-      >
-        {annotation.data && `${annotation.data.key}: ${annotation.data.value}`}
-      </div>
-    );
-  }
-
-  function renderEditor(props) {
-    const { geometry } = props.annotation;
-    if (!geometry) return null;
-
-    return (
-      <div
-        style={{
-          background: "white",
-          borderRadius: 3,
-          position: "absolute",
-          left: `${geometry.x}%`,
-          top: `${geometry.y + geometry.height}%`,
-        }}
-        className="p-2 rounded-[10px] mt-[5px]"
-      >
-        <input
-          onChange={(e) =>
-            props.onChange({
-              ...props.annotation,
-              data: {
-                ...props.annotation.data,
-                key: e.target.value,
-              },
-            })
-          }
-          placeholder="Key"
-          className="block mt-1 p-2 focus:outline-none"
-        />
-        <input
-          onChange={(e) =>
-            props.onChange({
-              ...props.annotation,
-              data: {
-                ...props.annotation.data,
-                value: e.target.value,
-              },
-            })
-          }
-          placeholder="Value"
-          className="block mt-1 p-2 focus:outline-none"
-        />
-
-        <button onClick={props.onSubmit} className={`${style.button} m-2`}>
-          Done
-        </button>
-      </div>
-    );
-  }
-
-  const onChange = (newAnnotation) => {
-    setAnnotation(newAnnotation);
-  };
-
-  const onSubmit = (newAnnotation) => {
-    const { geometry, data } = newAnnotation;
-
-    redoStackRef.current = [];
-
-    const newAnnotationData = {
-      geometry,
-      data: {
-        ...data,
-        id: Math.random(),
-        pageIndex: selectedPage,
-      },
-    };
-
-    setAnnotations((prevAnnotations) => [
-      ...prevAnnotations,
-      newAnnotationData,
-    ]);
-    undoStackRef.current.push(annotations);
+      await page.render({ canvasContext: context, viewport }).promise;
+      images.push(canvas.toDataURL());
+    }
+    setPageImages(images);
   };
 
   const handlePageSelection = (index) => {
@@ -246,26 +95,13 @@ const FilePreview = ({ file, annotations, setAnnotations }) => {
     saveFile(pdfData, "downloaded.pdf");
   };
 
-  const saveFile = (data, fileName) => {
-    const blob = new Blob([data], { type: "application/pdf" });
-    saveAs(blob, fileName);
-  };
-
   return (
     <div className="file-preview-container p-4">
-      <div className="flex justify-center mb-4">
-        {pageImages.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => handlePageSelection(index)}
-            className={`${
-              selectedPage === index ? "bg-blue-500" : "bg-gray-300"
-            } text-white font-bold py-2 px-4 rounded mx-1`}
-          >
-            Page {index + 1}
-          </button>
-        ))}
-      </div>
+      <PageSelector
+        pageImages={pageImages}
+        selectedPage={selectedPage}
+        onPageSelection={handlePageSelection}
+      />
       <div className="relative">
         {pageImages[selectedPage] && (
           <Annotation
@@ -276,37 +112,40 @@ const FilePreview = ({ file, annotations, setAnnotations }) => {
             )}
             type="RECTANGLE"
             value={annotation}
-            onChange={onChange}
-            onSubmit={onSubmit}
-            renderSelector={renderSelector}
-            renderHighlight={renderHighlight}
-            renderContent={renderContent}
-            renderEditor={renderEditor}
+            onChange={setAnnotation}
+            onSubmit={(newAnnotation) => {
+              redoStackRef.current = [];
+              const newAnnotationData = {
+                ...newAnnotation,
+                data: {
+                  ...newAnnotation.data,
+                  id: Math.random(),
+                  pageIndex: selectedPage,
+                },
+              };
+              setAnnotations((prev) => [...prev, newAnnotationData]);
+              undoStackRef.current.push(annotations);
+            }}
+            renderSelector={AnnotationRenderer.renderSelector}
+            renderHighlight={AnnotationRenderer.renderHighlight}
+            renderContent={AnnotationRenderer.renderContent}
+            renderEditor={(props) => (
+              <AnnotationEditor {...props} onSubmit={props.onSubmit} />
+            )}
           />
         )}
       </div>
       <div className="flex justify-between mt-4">
-        <button
-          onClick={handleUndo}
-          className={`${style.button} bg-[#E10000] m-2`}
-        >
+        <Button onClick={handleUndo} className="bg-[#E10000]">
           Undo
-        </button>
-        <button
-          onClick={handleRedo}
-          className={`${style.button} bg-[#0024E1] m-2`}
-        >
+        </Button>
+        <Button onClick={handleRedo} className="bg-[#0024E1]">
           Redo
-        </button>
-        <button onClick={handleExtract} className={`${style.button} m-2`}>
-          Extract
-        </button>
-        <button
-          onClick={handleDownload}
-          className={`${style.button} bg-[#4ca3dd] m-2`}
-        >
+        </Button>
+        <Button onClick={handleExtract}>Extract</Button>
+        <Button onClick={handleDownload} className="bg-[#4ca3dd]">
           Download PDF
-        </button>
+        </Button>
       </div>
     </div>
   );
