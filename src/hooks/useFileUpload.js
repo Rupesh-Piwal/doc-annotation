@@ -10,10 +10,9 @@ export const useFileUpload = () => {
     const file = event.target.files[0];
     setSelectedFile(file);
 
-    // Generate a preview URL for the selected file
     const previewUrl = URL.createObjectURL(file);
     setFilePreview(previewUrl);
-    setIsUploaded(false); // Reset upload state if new file is selected
+    setIsUploaded(false); 
   };
 
   const handleRemoveFile = () => {
@@ -26,11 +25,11 @@ export const useFileUpload = () => {
     if (selectedFile) {
       setIsLoading(true);
 
-      // Simulate a file upload process with a timeout
+     
       setTimeout(() => {
         setIsLoading(false);
         setIsUploaded(true);
-      }, 2000); // Simulate a 2-second upload
+      }, 2000); 
     } else {
       console.log("No file selected");
     }
