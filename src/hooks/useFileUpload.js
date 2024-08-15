@@ -12,7 +12,7 @@ export const useFileUpload = () => {
 
     const previewUrl = URL.createObjectURL(file);
     setFilePreview(previewUrl);
-    setIsUploaded(false); 
+    setIsUploaded(false);
   };
 
   const handleRemoveFile = () => {
@@ -25,11 +25,10 @@ export const useFileUpload = () => {
     if (selectedFile) {
       setIsLoading(true);
 
-     
       setTimeout(() => {
         setIsLoading(false);
         setIsUploaded(true);
-      }, 2000); 
+      }, 1000);
     } else {
       console.log("No file selected");
     }
