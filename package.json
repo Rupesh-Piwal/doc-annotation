@@ -11,6 +11,9 @@
     "copy-worker": "node copy-worker.js"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@mui/material": "^5.16.7",
     "@react-hook/resize-observer": "^2.0.2",
     "@wojtekmaj/react-hooks": "^1.21.0",
     "file-saver": "^2.0.5",
